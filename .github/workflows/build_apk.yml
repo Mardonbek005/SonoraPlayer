@@ -21,6 +21,9 @@ jobs:
         java-version: '17'
         cache: 'gradle'
 
+    - name: Generate Gradle Wrapper on Server
+      run: gradle wrapper --gradle-version 8.7
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
@@ -32,3 +35,4 @@ jobs:
       with:
         name: Sonora-Player-Debug
         path: app/build/outputs/apk/debug/app-debug.apk
+
