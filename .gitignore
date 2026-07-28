@@ -1,0 +1,29 @@
+# Built application files
+*.apk
+*.apks
+*.aab
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Local configuration file (sdk.dir, etc.)
+local.properties
+
+# Eclipse files
+.classpath
+.project
+
+# IntelliJ / Android Studio files
+.idea/
+*.iml
+.gradle
+captures/
+.externalNativeBuild
+.cxx/
+
+# OS files
+.DS_Store
+Thumbs.db
