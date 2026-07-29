@@ -22,7 +22,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -35,7 +34,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val audioFiles by viewModel.audioFiles.collectAsState()
+    // ViewModel'dagi asl nomlarga moslandi
+    val audioList by viewModel.audioList.collectAsState()
 
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -54,13 +54,13 @@ fun HomeScreen(
     ) { granted ->
         hasPermission = granted
         if (granted) {
-            viewModel.loadAudioFiles()
+            viewModel.loadAudios()
         }
     }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
-            viewModel.loadAudioFiles()
+            viewModel.loadAudios()
         } else {
             launcher.launch(permission)
         }
@@ -99,14 +99,14 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(audioFiles) { index, audio ->
+                    itemsIndexed(audioList) { index, audio ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF111111))
                                 .clickable {
-                                    viewModel.playAudio(audioFiles, index)
+                                    viewModel.playAudio(index)
                                     navController.navigate("now_playing")
                                 }
                                 .padding(12.dp),
