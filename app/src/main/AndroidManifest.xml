@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Ruxsatnomalar -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -14,12 +13,13 @@
     <application
         android:name=".SonoraApp"
         android:allowBackup="true"
+        android:icon="@drawable/app_icon"
+        android:roundIcon="@drawable/app_icon"
         android:label="Sonora Player"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar"
         tools:targetApi="31">
 
-        <!-- Asosiy Oyna -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -29,7 +29,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Fonda Musiqa Chalish Servisi -->
         <service
             android:name=".service.SonoraPlaybackService"
             android:exported="true"
@@ -39,7 +38,6 @@
             </intent-filter>
         </service>
 
-        <!-- Asosiy Ekranga Vidjet (Widget) -->
         <receiver
             android:name=".widget.SonoraWidgetProvider"
             android:exported="true">
@@ -50,7 +48,5 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
         </receiver>
-
     </application>
 </manifest>
-
