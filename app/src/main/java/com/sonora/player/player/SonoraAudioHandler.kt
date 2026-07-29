@@ -28,7 +28,9 @@ class SonoraAudioHandler @Inject constructor(
     private val _currentMediaItem = MutableStateFlow<MediaItem?>(null)
     val currentMediaItem: StateFlow<MediaItem?> = _currentMediaItem.asStateFlow()
 
-    // Vaqtni olish uchun yangi qo'shilgan qatorlar
+    private var isMuted = false
+    private var previousVolume = 1f
+
     val currentPosition: Long
         get() = mediaController?.currentPosition ?: 0L
 
@@ -80,6 +82,27 @@ class SonoraAudioHandler @Inject constructor(
 
     fun seekTo(position: Long) {
         mediaController?.seekTo(position)
+    }
+
+    fun setShuffleMode(enabled: Boolean) {
+        mediaController?.shuffleModeEnabled = enabled
+    }
+
+    fun setRepeatMode(enabled: Boolean) {
+        mediaController?.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+    }
+
+    fun toggleMute() {
+        mediaController?.let { controller ->
+            if (isMuted) {
+                controller.volume = previousVolume
+                isMuted = false
+            } else {
+                previousVolume = controller.volume
+                controller.volume = 0f
+                isMuted = true
+            }
+        }
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {

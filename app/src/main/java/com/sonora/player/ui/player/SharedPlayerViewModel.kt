@@ -33,7 +33,6 @@ class SharedPlayerViewModel @Inject constructor(
     private fun updateProgress() {
         viewModelScope.launch {
             while (isActive) {
-                // "player." so'zi olib tashlandi, to'g'ridan-to'g'ri o'qiydi
                 _currentPosition.value = audioHandler.currentPosition
                 _duration.value = audioHandler.duration.coerceAtLeast(0L)
                 delay(1000L) 
@@ -46,7 +45,18 @@ class SharedPlayerViewModel @Inject constructor(
     fun skipToPrevious() = audioHandler.skipToPrevious()
     
     fun seekTo(position: Float) {
-        // "player." so'zi olib tashlandi
         audioHandler.seekTo(position.toLong())
+    }
+
+    fun toggleShuffle(enabled: Boolean) {
+        audioHandler.setShuffleMode(enabled)
+    }
+
+    fun toggleRepeat(enabled: Boolean) {
+        audioHandler.setRepeatMode(enabled)
+    }
+
+    fun toggleMute() {
+        audioHandler.toggleMute()
     }
 }

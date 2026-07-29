@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +37,9 @@ fun NowPlayingScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
 
-    // Premium Tilla Ranglar
+    var isShuffleEnabled by remember { mutableStateOf(false) }
+    var isRepeatEnabled by remember { mutableStateOf(false) }
+
     val goldColor = Color(0xFFFFD700)
     val darkGold = Color(0xFFB8860B)
     val blackBg = Color(0xFF030303)
@@ -62,10 +62,9 @@ fun NowPlayingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 60.dp),
+                .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Yuqori qism
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,9 +85,8 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Tilla hoshiyali Albom muqovasi
             val artworkUri = currentMediaItem?.mediaMetadata?.artworkUri
             Box(
                 modifier = Modifier
@@ -108,19 +106,18 @@ fun NowPlayingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Musiqa nomi (Oq rang) va San'atkor (Tilla rang)
             Text(
                 text = currentMediaItem?.mediaMetadata?.title?.toString() ?: "Unknown Title",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = currentMediaItem?.mediaMetadata?.artist?.toString() ?: "Unknown Artist",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 color = goldColor.copy(alpha = 0.8f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -128,14 +125,21 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Tilla rangli Slayder va Shuffle/Repeat tugmalari
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { /* Shuffle */ }) {
-                    Icon(Icons.Filled.Shuffle, "Shuffle", tint = goldColor, modifier = Modifier.size(24.dp))
+                IconButton(onClick = { 
+                    isShuffleEnabled = !isShuffleEnabled
+                    viewModel.toggleShuffle(isShuffleEnabled)
+                }) {
+                    Icon(
+                        Icons.Filled.Shuffle, 
+                        "Shuffle", 
+                        tint = if (isShuffleEnabled) goldColor else goldColor.copy(alpha = 0.4f), 
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
                 
                 Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
@@ -158,44 +162,52 @@ fun NowPlayingScreen(
                     }
                 }
 
-                IconButton(onClick = { /* Repeat */ }) {
-                    Icon(Icons.Filled.Repeat, "Repeat", tint = goldColor, modifier = Modifier.size(24.dp))
+                IconButton(onClick = { 
+                    isRepeatEnabled = !isRepeatEnabled
+                    viewModel.toggleRepeat(isRepeatEnabled)
+                }) {
+                    Icon(
+                        Icons.Filled.Repeat, 
+                        "Repeat", 
+                        tint = if (isRepeatEnabled) goldColor else goldColor.copy(alpha = 0.4f), 
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Asosiy tugmalar qatori (Dumaloq halqali)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GoldCircularButton(icon = Icons.Filled.VolumeUp, label = "VOLUME", size = 56.dp, iconSize = 28.dp) { /* Volume */ }
+                GoldCircularButton(icon = Icons.Filled.VolumeUp, label = "VOLUME", size = 56.dp, iconSize = 28.dp) { 
+                    viewModel.toggleMute()
+                }
                 
                 GoldCircularButton(icon = Icons.Filled.SkipPrevious, label = "PREVIOUS", size = 64.dp, iconSize = 32.dp) { viewModel.skipToPrevious() }
                 
-                // Eng katta markaziy Play tugmasi
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier = Modifier
-                            .size(86.dp)
+                            .size(80.dp)
                             .clip(CircleShape)
                             .background(Brush.radialGradient(listOf(darkGold.copy(alpha = 0.3f), blackBg)))
                             .border(3.dp, goldColor, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        IconButton(onClick = { viewModel.playOrPause() }, modifier = Modifier.size(86.dp)) {
+                        IconButton(onClick = { viewModel.playOrPause() }, modifier = Modifier.size(80.dp)) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, 
                                 contentDescription = "Play/Pause",
                                 tint = goldColor,
-                                modifier = Modifier.size(50.dp)
+                                modifier = Modifier.size(44.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = "SONORA", color = goldColor, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "SONORA", color = goldColor, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 }
 
                 GoldCircularButton(icon = Icons.Filled.SkipNext, label = "NEXT", size = 64.dp, iconSize = 32.dp) { viewModel.skipToNext() }
@@ -206,7 +218,6 @@ fun NowPlayingScreen(
     }
 }
 
-// Rasmga o'xshatish uchun yaratilgan maxsus Tilla Tugma komponenti
 @Composable
 fun GoldCircularButton(icon: ImageVector, label: String, size: Dp, iconSize: Dp, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -221,7 +232,7 @@ fun GoldCircularButton(icon: ImageVector, label: String, size: Dp, iconSize: Dp,
                 Icon(icon, contentDescription = label, tint = Color(0xFFFFD700), modifier = Modifier.size(iconSize))
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(text = label, color = Color(0xFFFFD700).copy(alpha = 0.7f), fontSize = 9.sp, letterSpacing = 1.sp)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, color = Color(0xFFFFD700).copy(alpha = 0.7f), fontSize = 8.sp, letterSpacing = 1.sp)
     }
 }

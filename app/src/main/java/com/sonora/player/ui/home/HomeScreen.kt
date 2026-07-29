@@ -1,118 +1,148 @@
 package com.sonora.player.ui.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sonora.player.ui.components.SongItem
-import com.sonora.player.util.PermissionUtils
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @Composable
 fun HomeScreen(
+    navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    var permissionGranted by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val audioFiles by viewModel.audioFiles.collectAsState()
 
-    // Ruxsatnoma so'rash uchun launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_AUDIO
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
+    var hasPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        permissionGranted = isGranted
-        if (isGranted) {
-            viewModel.syncMusic()
+    ) { granted ->
+        hasPermission = granted
+        if (granted) {
+            viewModel.loadAudioFiles()
         }
     }
 
-    // Ekran ochilganda ruxsat so'rashni ishga tushirish
-    LaunchedEffect(Unit) {
-        permissionLauncher.launch(PermissionUtils.audioPermission)
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            viewModel.loadAudioFiles()
+        } else {
+            launcher.launch(permission)
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(WindowInsets.statusBars.asPaddingValues())
+            .background(Color(0xFF030303))
+            .systemBarsPadding()
     ) {
-        if (!permissionGranted) {
-            // Ruxsat berilmagan holat UI
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Musiqalarni o'qish uchun ruxsat kerak",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Button(
-                    onClick = { permissionLauncher.launch(PermissionUtils.audioPermission) },
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Text(text = "Ruxsat berish")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Barcha Musiqalar",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFFFFD700)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (!hasPermission) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Button(
+                        onClick = { launcher.launch(permission) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+                    ) {
+                        Text("Ruxsat berish", color = Color.Black)
+                    }
                 }
-            }
-        } else {
-            // Musiqalar ro'yxati yoki Yuklanish holati
-            if (uiState.isLoading && uiState.songs.isEmpty()) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else if (uiState.songs.isEmpty()) {
-                Text(
-                    text = "Qurilmada musiqa topilmadi",
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    item {
-                        Text(
-                            text = "Barcha Musiqalar",
-                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                    items(
-                        items = uiState.songs,
-                        key = { it.mediaId }
-                    ) { song ->
-                        SongItem(
-                            song = song,
-                            onClick = {
-                                viewModel.playSong(song, uiState.songs)
+                    itemsIndexed(audioFiles) { index, audio ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF111111))
+                                .clickable {
+                                    viewModel.playAudio(audioFiles, index)
+                                    navController.navigate("now_playing")
+                                }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(audio.albumArtUri)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Album Art",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.DarkGray)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = audio.title,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = audio.artist,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFFFFD700).copy(alpha = 0.7f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
