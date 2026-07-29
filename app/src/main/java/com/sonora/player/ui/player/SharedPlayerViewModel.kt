@@ -20,7 +20,6 @@ class SharedPlayerViewModel @Inject constructor(
     val currentMediaItem = audioHandler.currentMediaItem
     val isPlaying = audioHandler.isPlaying
 
-    // Vaqt chizig'i (Progress) uchun holatlar
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
@@ -34,24 +33,20 @@ class SharedPlayerViewModel @Inject constructor(
     private fun updateProgress() {
         viewModelScope.launch {
             while (isActive) {
-                if (isPlaying.value) {
-                    // ExoPlayer yordamida hozirgi vaqtni olish maqsadga muvofiq
-                    // Lekin biz AudioHandler orqali bog'langanmiz. Hozircha vaqtni simulyatsiya qilamiz 
-                    // yoki AudioHandler'dan joriy progressni olib keluvchi funksiyani chaqiramiz.
-                    // (To'liq ExoPlayer obyektiga kirish uchun AudioHandler kengaytirilishi kerak).
-                    // Hozirgi arxitekturada UI ni qotirmaslik uchun Flow ishlatdik.
-                }
-                delay(1000L) // Har 1 soniyada yangilanadi (UI uchun optimal)
+                // ExoPlayer'dan haqiqiy vaqtni olamiz
+                _currentPosition.value = audioHandler.player.currentPosition
+                _duration.value = audioHandler.player.duration.coerceAtLeast(0L)
+                delay(1000L) 
             }
         }
     }
 
     fun playOrPause() = audioHandler.playOrPause()
-    
     fun skipToNext() = audioHandler.skipToNext()
-    
     fun skipToPrevious() = audioHandler.skipToPrevious()
     
-    fun seekTo(position: Long) = audioHandler.seekTo(position)
+    // Vaqt chizig'idan musiqani o'tkazish funksiyasi
+    fun seekTo(position: Float) {
+        audioHandler.player.seekTo(position.toLong())
+    }
 }
-

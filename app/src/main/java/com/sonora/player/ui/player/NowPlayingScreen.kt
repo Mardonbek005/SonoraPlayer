@@ -1,26 +1,17 @@
 package com.sonora.player.ui.player
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,9 +37,16 @@ fun NowPlayingScreen(
     val currentMediaItem by viewModel.currentMediaItem.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     
-    // Hozircha UI da ko'rsatish uchun vaqt (Keyinchalik ExoPlayer progressi bilan sinxronlanadi)
-    val currentPosition = 0f
-    val duration = 100f 
+    val currentPosition by viewModel.currentPosition.collectAsState()
+    val duration by viewModel.duration.collectAsState()
+
+    fun formatTime(ms: Long): String {
+        if (ms < 0) return "00:00"
+        val totalSeconds = ms / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
 
     Box(
         modifier = Modifier
@@ -62,7 +60,6 @@ fun NowPlayingScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Yuqori qism: Orqaga qaytish va menyu
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -71,21 +68,20 @@ fun NowPlayingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Text(text = "▼", fontSize = 24.sp, color = MaterialTheme.colorScheme.onBackground)
+                    Icon(imageVector = Icons.Filled.KeyboardArrowDown, contentDescription = "Back", modifier = Modifier.size(32.dp))
                 }
                 Text(
                     text = "Now Playing",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
-                IconButton(onClick = { /* TODO: Qo'shimcha menyu */ }) {
-                    Text(text = "⋮", fontSize = 24.sp, color = MaterialTheme.colorScheme.onBackground)
+                IconButton(onClick = { /* Menyu */ }) {
+                    Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Menu")
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Katta Musiqa Muqovasi (Album Art)
             val artworkUri = currentMediaItem?.mediaMetadata?.artworkUri
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -96,17 +92,16 @@ fun NowPlayingScreen(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f) // Kvadrat shaklida bo'lishi uchun
+                    .aspectRatio(1f)
                     .clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Musiqa nomi va San'atkor
             Text(
                 text = currentMediaItem?.mediaMetadata?.title?.toString() ?: "Unknown Title",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 28.sp),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -123,11 +118,13 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Vaqt chizig'i (Progress Slider)
+            val sliderPosition = if (duration > 0) currentPosition.toFloat() else 0f
+            val sliderMax = if (duration > 0) duration.toFloat() else 100f
+
             Slider(
-                value = currentPosition,
-                onValueChange = { /* TODO: Seek function */ },
-                valueRange = 0f..duration,
+                value = sliderPosition,
+                onValueChange = { viewModel.seekTo(it) },
+                valueRange = 0f..sliderMax,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -140,13 +137,12 @@ fun NowPlayingScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "0:00", style = MaterialTheme.typography.labelMedium)
-                Text(text = "4:20", style = MaterialTheme.typography.labelMedium)
+                Text(text = formatTime(currentPosition), style = MaterialTheme.typography.labelMedium)
+                Text(text = formatTime(duration), style = MaterialTheme.typography.labelMedium)
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Asosiy boshqaruv tugmalari (Play/Pause, Next, Prev)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,7 +151,7 @@ fun NowPlayingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { viewModel.skipToPrevious() }, modifier = Modifier.size(56.dp)) {
-                    Text(text = "⏮", fontSize = 32.sp)
+                    Icon(imageVector = Icons.Filled.SkipPrevious, contentDescription = "Prev", modifier = Modifier.size(40.dp))
                 }
                 
                 IconButton(
@@ -165,15 +161,16 @@ fun NowPlayingScreen(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                 ) {
-                    Text(
-                        text = if (isPlaying) "⏸" else "▶",
-                        fontSize = 32.sp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, 
+                        contentDescription = "Play/Pause",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
 
                 IconButton(onClick = { viewModel.skipToNext() }, modifier = Modifier.size(56.dp)) {
-                    Text(text = "⏭", fontSize = 32.sp)
+                    Icon(imageVector = Icons.Filled.SkipNext, contentDescription = "Next", modifier = Modifier.size(40.dp))
                 }
             }
         }
