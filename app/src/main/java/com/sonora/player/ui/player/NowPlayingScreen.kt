@@ -37,8 +37,9 @@ fun NowPlayingScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
 
-    var isShuffleEnabled by remember { mutableStateOf(false) }
-    var isRepeatEnabled by remember { mutableStateOf(false) }
+    // Holatlar ViewModel'dan olinadi (boshqa qo'shiqqa o'tsa ham o'chib qolmaydi)
+    val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
+    val isRepeatEnabled by viewModel.isRepeatEnabled.collectAsState()
 
     val goldColor = Color(0xFFFFD700)
     val darkGold = Color(0xFFB8860B)
@@ -130,10 +131,7 @@ fun NowPlayingScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { 
-                    isShuffleEnabled = !isShuffleEnabled
-                    viewModel.toggleShuffle(isShuffleEnabled)
-                }) {
+                IconButton(onClick = { viewModel.toggleShuffle() }) {
                     Icon(
                         Icons.Filled.Shuffle, 
                         "Shuffle", 
@@ -162,10 +160,7 @@ fun NowPlayingScreen(
                     }
                 }
 
-                IconButton(onClick = { 
-                    isRepeatEnabled = !isRepeatEnabled
-                    viewModel.toggleRepeat(isRepeatEnabled)
-                }) {
+                IconButton(onClick = { viewModel.toggleRepeat() }) {
                     Icon(
                         Icons.Filled.Repeat, 
                         "Repeat", 

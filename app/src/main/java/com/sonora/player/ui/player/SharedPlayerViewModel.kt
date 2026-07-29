@@ -26,6 +26,13 @@ class SharedPlayerViewModel @Inject constructor(
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration.asStateFlow()
 
+    // Holatlar o'chib ketmasligi uchun ViewModel'da saqlanadi
+    private val _isShuffleEnabled = MutableStateFlow(false)
+    val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
+
+    private val _isRepeatEnabled = MutableStateFlow(false)
+    val isRepeatEnabled: StateFlow<Boolean> = _isRepeatEnabled.asStateFlow()
+
     init {
         updateProgress()
     }
@@ -48,12 +55,16 @@ class SharedPlayerViewModel @Inject constructor(
         audioHandler.seekTo(position.toLong())
     }
 
-    fun toggleShuffle(enabled: Boolean) {
-        audioHandler.setShuffleMode(enabled)
+    fun toggleShuffle() {
+        val newState = !_isShuffleEnabled.value
+        _isShuffleEnabled.value = newState
+        audioHandler.setShuffleMode(newState)
     }
 
-    fun toggleRepeat(enabled: Boolean) {
-        audioHandler.setRepeatMode(enabled)
+    fun toggleRepeat() {
+        val newState = !_isRepeatEnabled.value
+        _isRepeatEnabled.value = newState
+        audioHandler.setRepeatMode(newState)
     }
 
     fun toggleMute() {
