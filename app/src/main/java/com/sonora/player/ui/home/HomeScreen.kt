@@ -34,8 +34,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    // ViewModel'dagi asl nomlarga moslandi
-    val audioList by viewModel.audioList.collectAsState()
+    // Asl ViewModel'dagi to'g'ri o'zgaruvchi va funksiyalar
+    val audioFiles by viewModel.audioFiles.collectAsState()
 
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -54,13 +54,13 @@ fun HomeScreen(
     ) { granted ->
         hasPermission = granted
         if (granted) {
-            viewModel.loadAudios()
+            viewModel.loadAudioFiles()
         }
     }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
-            viewModel.loadAudios()
+            viewModel.loadAudioFiles()
         } else {
             launcher.launch(permission)
         }
@@ -99,14 +99,14 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(audioList) { index, audio ->
+                    itemsIndexed(audioFiles) { index, audio ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF111111))
                                 .clickable {
-                                    viewModel.playAudio(index)
+                                    viewModel.playAudio(audioFiles, index)
                                     navController.navigate("now_playing")
                                 }
                                 .padding(12.dp),
