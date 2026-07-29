@@ -9,7 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,8 +34,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    // Asl ViewModel'dagi to'g'ri o'zgaruvchi va funksiyalar
-    val audioFiles by viewModel.audioFiles.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -54,13 +53,13 @@ fun HomeScreen(
     ) { granted ->
         hasPermission = granted
         if (granted) {
-            viewModel.loadAudioFiles()
+            viewModel.syncMusic()
         }
     }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
-            viewModel.loadAudioFiles()
+            viewModel.syncMusic()
         } else {
             launcher.launch(permission)
         }
@@ -94,19 +93,23 @@ fun HomeScreen(
                         Text("Ruxsat berish", color = Color.Black)
                     }
                 }
+            } else if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFFFD700))
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(audioFiles) { index, audio ->
+                    items(uiState.songs) { song ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF111111))
                                 .clickable {
-                                    viewModel.playAudio(audioFiles, index)
+                                    viewModel.playSong(song, uiState.songs)
                                     navController.navigate("now_playing")
                                 }
                                 .padding(12.dp),
@@ -114,7 +117,7 @@ fun HomeScreen(
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
-                                    .data(audio.albumArtUri)
+                                    .data(song.artworkUri)
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = "Album Art",
@@ -127,7 +130,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = audio.title,
+                                    text = song.title,
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                     color = Color.White,
                                     maxLines = 1,
@@ -135,7 +138,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = audio.artist,
+                                    text = song.artist,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color(0xFFFFD700).copy(alpha = 0.7f),
                                     maxLines = 1,
