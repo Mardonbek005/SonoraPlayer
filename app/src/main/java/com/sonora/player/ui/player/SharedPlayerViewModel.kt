@@ -33,9 +33,9 @@ class SharedPlayerViewModel @Inject constructor(
     private fun updateProgress() {
         viewModelScope.launch {
             while (isActive) {
-                // ExoPlayer'dan haqiqiy vaqtni olamiz
-                _currentPosition.value = audioHandler.player.currentPosition
-                _duration.value = audioHandler.player.duration.coerceAtLeast(0L)
+                // "player." so'zi olib tashlandi, to'g'ridan-to'g'ri o'qiydi
+                _currentPosition.value = audioHandler.currentPosition
+                _duration.value = audioHandler.duration.coerceAtLeast(0L)
                 delay(1000L) 
             }
         }
@@ -45,8 +45,8 @@ class SharedPlayerViewModel @Inject constructor(
     fun skipToNext() = audioHandler.skipToNext()
     fun skipToPrevious() = audioHandler.skipToPrevious()
     
-    // Vaqt chizig'idan musiqani o'tkazish funksiyasi
     fun seekTo(position: Float) {
-        audioHandler.player.seekTo(position.toLong())
+        // "player." so'zi olib tashlandi
+        audioHandler.seekTo(position.toLong())
     }
 }

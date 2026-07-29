@@ -15,23 +15,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * ViewModel va Compose ekranlari musiqa bilan shu ob'ekt orqali muloqot qiladi.
- */
 @Singleton
 class SonoraAudioHandler @Inject constructor(
     private val context: Context
 ) : Player.Listener {
-
     private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
 
-    // UI kuzatib turishi uchun holatlar
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
     private val _currentMediaItem = MutableStateFlow<MediaItem?>(null)
     val currentMediaItem: StateFlow<MediaItem?> = _currentMediaItem.asStateFlow()
+
+    // Vaqtni olish uchun yangi qo'shilgan qatorlar
+    val currentPosition: Long
+        get() = mediaController?.currentPosition ?: 0L
+
+    val duration: Long
+        get() = mediaController?.duration ?: 0L
 
     init {
         initializeController()
@@ -75,12 +77,10 @@ class SonoraAudioHandler @Inject constructor(
         mediaController?.prepare()
         mediaController?.play()
     }
-    
+
     fun seekTo(position: Long) {
         mediaController?.seekTo(position)
     }
-
-    // --- Player.Listener Callback'lari ---
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         _isPlaying.value = isPlaying
